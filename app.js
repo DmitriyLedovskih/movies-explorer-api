@@ -3,10 +3,12 @@ const express = require('express');
 const { errors } = require('celebrate');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 const error = require('./middlewares/error');
 const router = require('./routes');
 const { errorLogger, requestLogger } = require('./middlewares/logger');
 const cors = require('./middlewares/cors');
+const limiter = require('./middlewares/limiter');
 
 const { PORT = 3000, DB_LINK } = process.env;
 
@@ -16,6 +18,10 @@ const app = express();
 app.use(express.json());
 
 app.use(cookieParser());
+
+app.use(helmet());
+
+app.use(limiter);
 
 app.use(cors);
 

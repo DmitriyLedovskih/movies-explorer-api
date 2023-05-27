@@ -11,70 +11,77 @@ const sendUser = require('../utils/sendUser');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
-const updateData = (req, res, next) => {
-  User.findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
-    .then((user) => sendUser(res, user))
-    .catch((err) => {
-      if (err instanceof ValidationError) {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else {
-        next(err);
-      }
-    });
+const updateData = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      req.body,
+      { new: true, runValidators: true },
+    );
+    sendUser(res, user);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      next(new BadRequestError('Переданы некорректные данные'));
+    } else {
+      next(err);
+    }
+  }
 };
 
-const getMe = (req, res, next) => {
-  User.findById(req.user._id)
-    .then((user) => sendUser(res, user))
-    .catch(next);
+const getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    sendUser(res, user);
+  } catch (err) {
+    next(err);
+  }
 };
 
-const createUser = (req, res, next) => {
+const createUser = async (req, res, next) => {
   const {
     name,
     email,
     password,
   } = req.body;
-  bcrypt.hash(password, 10)
-    .then((hash) => {
-      User.create({
-        name,
-        email,
-        password: hash,
-      })
-        .then((user) => res.status(CREATE_STATUS).send({ data: user }))
-        .catch((err) => {
-          if (err.code === 11000) {
-            next(new ConflictError('Email уже занят'));
-          } else if (err instanceof ValidationError) {
-            next(new BadRequestError('Переданы некорректные данные'));
-          } else {
-            next(err);
-          }
-        });
-    })
-    .catch(next);
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hash,
+    });
+    res.status(CREATE_STATUS).send({ data: user });
+  } catch (err) {
+    if (err.code === 11000) {
+      next(new ConflictError('Email уже занят'));
+    } else if (err instanceof ValidationError) {
+      next(new BadRequestError('Переданы некорректные данные'));
+    } else {
+      next(err);
+    }
+  }
 };
 
 const updateProfile = (req, res, next) => updateData(req, res, next);
 
-const login = (req, res, next) => {
+const login = async (req, res, next) => {
   const { email, password } = req.body;
-  User.findUserByCredentials(email, password)
-    .then((user) => {
-      const token = jwt.sign(
-        { _id: user._id },
-        NODE_ENV !== 'production' ? 'some-key' : JWT_SECRET,
-        { expiresIn: '7d' },
-      );
+  try {
+    const user = await User.findUserByCredentials(email, password);
+    const token = jwt.sign(
+      { _id: user._id },
+      NODE_ENV !== 'production' ? 'some-key' : JWT_SECRET,
+      { expiresIn: '7d' },
+    );
 
-      res.cookie('token', token, {
-        maxAge: 3600000 * 24 * 7,
-        httpOnly: true,
-        sameSite: true,
-      }).send({ email });
-    })
-    .catch(next);
+    res.cookie('token', token, {
+      maxAge: 3600000 * 24 * 7,
+      httpOnly: true,
+      sameSite: true,
+    }).send({ email });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const signOut = (req, res) => {
