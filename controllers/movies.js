@@ -8,15 +8,16 @@ const {
   CREATE_STATUS,
 } = require('../utils/constants');
 
-const getMovies = (req, res, next) => {
-  Movie.find({})
-    .sort({ createdAt: -1 })
-    .populate('owner')
-    .then((movies) => res.send({ data: movies }))
-    .catch(next);
+const getMovies = async (req, res, next) => {
+  try {
+    const movie = await Movie.find({}).sort({ createdAt: -1 }).populate('owner');
+    res.send({ data: movie });
+  } catch (err) {
+    next(err);
+  }
 };
 
-const createMovie = (req, res, next) => {
+const createMovie = async (req, res, next) => {
   const {
     country,
     director,
@@ -30,44 +31,47 @@ const createMovie = (req, res, next) => {
     nameRU,
     nameEN,
   } = req.body;
-  Movie.create({
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
-    movieId,
-    nameRU,
-    nameEN,
-    owner: req.user._id,
-  })
-    .then((movie) => movie.populate('owner'))
-    .then((movie) => res.status(CREATE_STATUS).send({ data: movie }))
-    .catch((err) => {
-      if (err instanceof ValidationError) {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else {
-        next(err);
-      }
+  try {
+    const movieCreate = await Movie.create({
+      country,
+      director,
+      duration,
+      year,
+      description,
+      image,
+      trailerLink,
+      thumbnail,
+      movieId,
+      nameRU,
+      nameEN,
+      owner: req.user._id,
     });
+    const movie = await movieCreate.populate('owner');
+    res.status(CREATE_STATUS).send({ data: movie });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      next(new BadRequestError('Переданы некорректные данные'));
+    } else {
+      next(err);
+    }
+  }
 };
 
-const deleteMovie = (req, res, next) => {
-  Movie.findById(req.params.movieId)
-    .then((movie) => {
-      if (!movie) {
-        throw new NotFoundError('Фильм не найден');
-      } else if (req.user._id === movie.owner.toString()) {
-        return Movie.findByIdAndRemove(req.params.movieId)
-          .then(() => res.send({ message: 'Фильм удален' }));
-      } else {
-        return next(new ForbiddenError('Нельзя удалять не ваш фильм'));
-      }
-    })
-    .catch(next);
+const deleteMovie = async (req, res, next) => {
+  try {
+    const movie = await Movie.findById(req.params.movieId);
+    if (!movie) {
+      throw new NotFoundError('Фильм не найден');
+    } else if (req.user._id === movie.owner.toString()) {
+      await Movie.findByIdAndRemove(req.params.movieId);
+      res.send({ message: 'Фильм удален' });
+    } else {
+      return next(new ForbiddenError('Нельзя удалять не ваш фильм'));
+    }
+  } catch (err) {
+    next(err);
+  }
+  return false;
 };
 
 module.exports = {
