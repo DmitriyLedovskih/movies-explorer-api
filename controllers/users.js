@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { ValidationError } = require('mongoose').Error;
 const User = require('../models/user');
 const {
-  CREATE_STATUS,
+  CREATE_STATUS, UNIQUE_STATUS, incorrectDataMessage, exitMessage, emailBusyMessage,
 } = require('../utils/constants');
 const BadRequestError = require('../errors/BadRequestError');
 const ConflictError = require('../errors/ConflictError');
@@ -21,7 +21,9 @@ const updateData = async (req, res, next) => {
     sendUser(res, user);
   } catch (err) {
     if (err instanceof ValidationError) {
-      next(new BadRequestError('Переданы некорректные данные'));
+      next(new BadRequestError(incorrectDataMessage));
+    } else if (err.code === UNIQUE_STATUS) {
+      next(new ConflictError(emailBusyMessage));
     } else {
       next(err);
     }
@@ -52,10 +54,10 @@ const createUser = async (req, res, next) => {
     });
     res.status(CREATE_STATUS).send({ data: user });
   } catch (err) {
-    if (err.code === 11000) {
-      next(new ConflictError('Email уже занят'));
+    if (err.code === UNIQUE_STATUS) {
+      next(new ConflictError(emailBusyMessage));
     } else if (err instanceof ValidationError) {
-      next(new BadRequestError('Переданы некорректные данные'));
+      next(new BadRequestError(incorrectDataMessage));
     } else {
       next(err);
     }
@@ -85,7 +87,7 @@ const login = async (req, res, next) => {
 };
 
 const signOut = (req, res) => {
-  res.clearCookie('token').send({ message: 'Вы вышли из системы' });
+  res.clearCookie('token').send({ message: exitMessage });
 };
 
 module.exports = {

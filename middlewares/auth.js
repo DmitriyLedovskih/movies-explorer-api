@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UnauthorizedError = require('../errors/UnauthorizedError');
+const { notAuthMessage } = require('../utils/constants');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -7,7 +8,7 @@ module.exports = (req, res, next) => {
   const { token } = req.cookies;
 
   if (!token) {
-    throw new UnauthorizedError('Вы не авторизованы');
+    throw new UnauthorizedError(notAuthMessage);
   }
 
   let payload;
@@ -15,7 +16,7 @@ module.exports = (req, res, next) => {
   try {
     payload = jwt.verify(token, NODE_ENV !== 'production' ? 'some-key' : JWT_SECRET);
   } catch (err) {
-    next(new UnauthorizedError('Вы не авторизованы'));
+    next(new UnauthorizedError(notAuthMessage));
     return;
   }
 

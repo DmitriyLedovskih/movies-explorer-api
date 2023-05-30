@@ -21,11 +21,11 @@ app.use(cookieParser());
 
 app.use(helmet());
 
-app.use(limiter);
-
 app.use(cors);
 
 app.use(requestLogger);
+
+app.use(limiter);
 
 app.use(router);
 

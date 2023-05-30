@@ -1,5 +1,7 @@
 const allowedCors = [
   'http://localhost:3000',
+  'http://api.movies.dmitriyled.nomoredomains.rocks',
+  'https://api.movies.dmitriyled.nomoredomains.rocks',
 ];
 
 module.exports = (req, res, next) => {
