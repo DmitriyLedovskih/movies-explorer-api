@@ -10,7 +10,7 @@ const { errorLogger, requestLogger } = require('./middlewares/logger');
 const cors = require('./middlewares/cors');
 const limiter = require('./middlewares/limiter');
 
-const { PORT = 3000, DB_LINK } = process.env;
+const { PORT = 3000, DB_LINK = 'mongodb://127.0.0.1:27017/bitfilmsdb' } = process.env;
 
 mongoose.connect(DB_LINK);
 
