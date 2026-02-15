@@ -51,7 +51,24 @@ const createUser = async (req, res, next) => {
       email,
       password: hash,
     });
-    res.status(CREATE_STATUS).send({ data: user });
+
+    const findUser = await User.findUserByCredentials(email, password);
+
+    const token = jwt.sign(
+      { _id: findUser._id },
+      NODE_ENV !== "production" ? "some-key" : JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    res
+      .status(CREATE_STATUS)
+      .cookie("token", token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+      })
+      .send({ data: user });
   } catch (err) {
     if (err.code === UNIQUE_STATUS) {
       next(new ConflictError(emailBusyMessage));
