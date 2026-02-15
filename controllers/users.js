@@ -79,7 +79,8 @@ const login = async (req, res, next) => {
       .cookie("token", token, {
         maxAge: 3600000 * 24 * 7,
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
+        secure: true,
       })
       .send({ email });
   } catch (err) {
@@ -88,7 +89,13 @@ const login = async (req, res, next) => {
 };
 
 const signOut = (req, res) => {
-  res.clearCookie("token").send({ message: exitMessage });
+  res
+    .clearCookie("token", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    })
+    .send({ message: exitMessage });
 };
 
 module.exports = {
