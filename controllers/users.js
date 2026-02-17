@@ -99,7 +99,7 @@ const login = async (req, res, next) => {
         sameSite: "none",
         secure: true,
       })
-      .send({ email });
+      .send({ data: user });
   } catch (err) {
     next(err);
   }
